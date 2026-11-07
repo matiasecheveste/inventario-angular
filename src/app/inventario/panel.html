@@ -1,0 +1,86 @@
+<!-- Inventario — Matías Nicolás Echeveste Cardozo -->
+<section class="indicadores" aria-label="Indicadores">
+  <article>
+    <h2>Valor del inventario</h2>
+    <p>{{ inventario.valorTotal() | currency: 'UYU' : 'symbol-narrow' : '1.0-0' : 'es-UY' }}</p>
+  </article>
+  <article>
+    <h2>Unidades</h2>
+    <p>{{ inventario.unidades() }}</p>
+  </article>
+  <article [class.alerta]="inventario.alertas().length > 0">
+    <h2>Bajo el mínimo</h2>
+    <p data-prueba="alertas">{{ inventario.alertas().length }}</p>
+  </article>
+</section>
+
+@if (inventario.alertas().length) {
+  <section class="reposicion" aria-labelledby="titulo-reposicion">
+    <h2 id="titulo-reposicion">Reposición sugerida</h2>
+    <ul>
+      @for (p of inventario.alertas(); track p.sku) {
+        <li>
+          <a [routerLink]="['/productos', p.sku]">{{ p.nombre }}</a>: hay {{ p.stock }}, mínimo {{ p.minimo }} →
+          comprar <strong>{{ inventario.sugerenciaCompra(p) }}</strong>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+<section class="filtros" aria-label="Filtros">
+  <label>Buscar <input type="search" [formControl]="busqueda" placeholder="SKU, nombre o ubicación" /></label>
+  <label>
+    Categoría
+    <select [value]="categoria()" (change)="categoria.set($any($event.target).value)">
+      <option value="">Todas</option>
+      @for (c of categorias; track c[0]) {
+        <option [value]="c[0]">{{ c[1] }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Ordenar por
+    <select [value]="orden()" (change)="orden.set($any($event.target).value)">
+      <option value="nombre">Nombre</option>
+      <option value="stock">Stock (menor primero)</option>
+      <option value="valor">Valor (mayor primero)</option>
+    </select>
+  </label>
+  <label class="casilla">
+    <input type="checkbox" [checked]="soloAlertas()" (change)="soloAlertas.set($any($event.target).checked)" /> Sólo alertas
+  </label>
+</section>
+
+<table>
+  <caption>{{ filas().length }} productos</caption>
+  <thead>
+    <tr>
+      <th scope="col">SKU</th>
+      <th scope="col">Producto</th>
+      <th scope="col">Categoría</th>
+      <th scope="col">Ubicación</th>
+      <th scope="col" class="num">Stock</th>
+      <th scope="col" class="num">Valor</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (p of filas(); track p.sku) {
+      <tr [attr.data-estado]="estado(p)">
+        <td>{{ p.sku }}</td>
+        <td><a [routerLink]="['/productos', p.sku]">{{ p.nombre }}</a></td>
+        <td>{{ nombreCategoria(p.categoria) }}</td>
+        <td>{{ p.ubicacion }}</td>
+        <td class="num">
+          {{ p.stock }}
+          @if (estado(p) !== 'ok') {
+            <span class="etiqueta">{{ estado(p) === 'agotado' ? 'agotado' : 'bajo' }}</span>
+          }
+        </td>
+        <td class="num">{{ p.stock * p.costo | currency: 'UYU' : 'symbol-narrow' : '1.0-0' : 'es-UY' }}</td>
+      </tr>
+    } @empty {
+      <tr><td colspan="6">No hay productos que coincidan.</td></tr>
+    }
+  </tbody>
+</table>

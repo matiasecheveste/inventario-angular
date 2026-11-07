@@ -1,0 +1,64 @@
+<!-- Inventario — Matías Nicolás Echeveste Cardozo -->
+<a routerLink="/">← Volver al panel</a>
+
+@if (producto(); as p) {
+  <h2>{{ p.nombre }}</h2>
+  <dl class="ficha">
+    <dt>SKU</dt><dd>{{ p.sku }}</dd>
+    <dt>Categoría</dt><dd>{{ categorias[p.categoria] }}</dd>
+    <dt>Ubicación</dt><dd>{{ p.ubicacion }}</dd>
+    <dt>Stock</dt><dd data-prueba="stock">{{ p.stock }} (mínimo {{ p.minimo }})</dd>
+    <dt>Costo unitario</dt><dd>{{ p.costo | currency: 'UYU' : 'symbol-narrow' : '1.0-0' : 'es-UY' }}</dd>
+  </dl>
+
+  <form [formGroup]="formulario" (ngSubmit)="registrar()" class="movimiento" novalidate aria-labelledby="titulo-mov">
+    <h3 id="titulo-mov">Registrar movimiento</h3>
+    <label>
+      Tipo
+      <select formControlName="tipo">
+        <option value="entrada">Entrada</option>
+        <option value="salida">Salida</option>
+        <option value="ajuste">Ajuste por conteo</option>
+      </select>
+    </label>
+    <label>
+      {{ formulario.controls.tipo.value === 'ajuste' ? 'Stock contado' : 'Cantidad' }}
+      <input type="number" min="0" formControlName="cantidad" [attr.aria-invalid]="formulario.controls.cantidad.invalid && formulario.controls.cantidad.touched" />
+    </label>
+    <label>
+      Motivo
+      <input formControlName="motivo" maxlength="120" [attr.aria-invalid]="formulario.controls.motivo.invalid && formulario.controls.motivo.touched" />
+    </label>
+    @if (formulario.controls.motivo.touched && formulario.controls.motivo.hasError('required')) {
+      <p class="error">Indique el motivo.</p>
+    }
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+    <p role="status" class="ok">{{ confirmacion() }}</p>
+    <button type="submit">Registrar</button>
+  </form>
+
+  <h3>Historial</h3>
+  @if (historial().length) {
+    <table>
+      <thead><tr><th scope="col">Fecha</th><th scope="col">Tipo</th><th scope="col" class="num">Cantidad</th><th scope="col" class="num">Stock</th><th scope="col">Motivo</th></tr></thead>
+      <tbody>
+        @for (m of historial(); track m.id) {
+          <tr>
+            <td>{{ m.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ m.tipo }}</td>
+            <td class="num">{{ m.cantidad }}</td>
+            <td class="num">{{ m.stockResultante }}</td>
+            <td>{{ m.motivo }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  } @else {
+    <p>Sin movimientos registrados.</p>
+  }
+} @else {
+  <h2>Producto no encontrado</h2>
+  <p>No existe un producto con el código {{ sku() }}.</p>
+}
